@@ -65,7 +65,9 @@ const App = () => {
 
   return (
     <>
+      {/* Could be refactored with react portal */}
       <DeleteModal isOpen={isOpen} onClose={onClose} onYes={destroyCategory} />
+
       <Header />
       <Container mt={12} display="flex" maxW="1200px">
         <CategorySection
