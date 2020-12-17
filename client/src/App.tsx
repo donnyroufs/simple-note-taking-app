@@ -1,38 +1,32 @@
 import { useEffect, useRef, useState } from "react";
-import { AddIcon, DeleteIcon } from "@chakra-ui/icons";
 import { useDebounce } from "use-debounce";
 import Socket, { waitForConnection } from "./utils/socket";
 import { Events, Note, Status } from "./common/index";
-import { DeleteModal, Loader } from "./components";
 import {
-  Box,
-  Button,
-  Container,
-  Flex,
-  Heading,
-  Input,
-  InputGroup,
-  InputLeftElement,
-  List,
-  ListItem,
-  Textarea,
-  useDisclosure,
-  Text,
-} from "@chakra-ui/react";
+  DeleteModal,
+  Loader,
+  Header,
+  CategorySection,
+  ContentSection,
+} from "./components";
+import { Container, useDisclosure } from "@chakra-ui/react";
 
 const App = () => {
   const [active, setActive] = useState<Note | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
-  const [value, setValue] = useState<string>("");
 
   const [loading, setLoading] = useState<boolean>(true);
   const [status, setStatus] = useState<Status>(Status.synced);
 
   const [categoryValue, setCategoryValue] = useState<string>("");
+
+  const [value, setValue] = useState<string>("");
+  const [debouncedValue] = useDebounce(value, 600);
+
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
   const mounted = useRef(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const [debouncedValue] = useDebounce(value, 600);
-  const { isOpen, onOpen, onClose } = useDisclosure();
 
   useEffect(() => {
     waitForConnection().then((socket) => {
@@ -81,18 +75,30 @@ const App = () => {
     setValue(active.content);
   }, [active]);
 
-  function createNewCategory(e: React.FormEvent) {
-    e.preventDefault();
-
-    if (categoryValue.length <= 0) return;
-    Socket.emit(Events.createCategory, { category: categoryValue });
-  }
-
   function destroyCategory() {
     if (!active) return;
     Socket.emit(Events.destroyCategory, { id: active.id });
     setNotes((curr) => curr.filter((n) => n.id !== active.id));
     onClose();
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setValue(e.target.value);
+    if (status !== Status.typing) {
+      setStatus(Status.typing);
+    }
+    setNotes((curr) =>
+      curr.map((n) => {
+        if (active && n.id === active.id) {
+          return {
+            ...n,
+            content: e.target.value,
+          };
+        }
+
+        return n;
+      })
+    );
   }
 
   if (loading) {
@@ -101,96 +107,25 @@ const App = () => {
 
   return (
     <>
+      {/* refactor with a portal */}
       <DeleteModal isOpen={isOpen} onClose={onClose} onYes={destroyCategory} />
-      <Container mt={12} display="flex" maxW="140ch">
-        <Box flex={1} mr={16}>
-          <Heading size="1xl" mb={10}>
-            Categories
-          </Heading>
-          <List spacing={3} mb={6}>
-            {notes.map((note) => (
-              <ListItem
-                onClick={() => {
-                  const _note = notes.find((n) => n.id === note.id);
-                  if (!_note) return;
 
-                  setActive(_note);
-                }}
-                bgColor={
-                  active && note.id === active.id ? "gray.200" : "gray.100"
-                }
-                p={4}
-                borderRadius={9}
-                _hover={{ bgColor: "gray.200" }}
-                cursor="pointer"
-                key={note.id}
-              >
-                {note.category}
-              </ListItem>
-            ))}
-          </List>
-          <InputGroup as="form" onSubmit={createNewCategory}>
-            <InputLeftElement
-              pointerEvents="none"
-              children={<AddIcon color="gray.300" />}
-            />
-            <Input
-              value={categoryValue}
-              onChange={(e) => setCategoryValue(e.target.value)}
-              placeholder="add new category"
-              variant="ghost"
-            />
-          </InputGroup>
-        </Box>
-        <Box flex={2}>
-          <Flex as="header" justify="space-between" align="center" mb={6}>
-            <Heading size="1xl">Content</Heading>
-            <Button
-              variant="solid"
-              colorScheme="pink"
-              leftIcon={<DeleteIcon />}
-              onClick={onOpen}
-            >
-              Delete
-            </Button>
-          </Flex>
-          <Textarea
-            ref={textAreaRef}
-            value={value}
-            onChange={(e) => {
-              setValue(e.target.value);
-              if (status !== Status.typing) {
-                setStatus(Status.typing);
-              }
-              setNotes((curr) =>
-                curr.map((n) => {
-                  if (active && n.id === active.id) {
-                    return {
-                      ...n,
-                      content: e.target.value,
-                    };
-                  }
-
-                  return n;
-                })
-              );
-            }}
-            placeholder="Start writing..."
-            minH={400}
-          />
-          <Text
-            fontWeight="bold"
-            fontSize="xs"
-            color="gray.500"
-            align="right"
-            mt="6"
-            textTransform="uppercase"
-            letterSpacing={0.6}
-          >
-            {status === Status.synced && "Up to date"}
-            {status === Status.typing && "Editing..."}
-          </Text>
-        </Box>
+      <Header />
+      <Container mt={12} display="flex" maxW="1200px">
+        <CategorySection
+          active={active}
+          categoryValue={categoryValue}
+          notes={notes}
+          setActive={setActive}
+          setCategoryValue={setCategoryValue}
+        />
+        <ContentSection
+          handleChange={handleChange}
+          onOpen={onOpen}
+          status={status}
+          textAreaRef={textAreaRef}
+          value={value}
+        />
       </Container>
     </>
   );
