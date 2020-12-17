@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Box, Heading } from "@chakra-ui/react";
 import { Categories, AddCategory } from "./components/index";
 import { Events, Note } from "../../common";
@@ -7,17 +8,47 @@ interface ICategorySectionProps {
   setCategoryValue: React.Dispatch<React.SetStateAction<string>>;
   categoryValue: string;
   setActive: React.Dispatch<React.SetStateAction<Note | null>>;
+  setValue: React.Dispatch<React.SetStateAction<string>>;
   notes: Note[];
   active: Note | null;
+  debouncedValue: string;
+  textAreaRef: React.RefObject<HTMLTextAreaElement>;
 }
 
 export const CategorySection: React.FC<ICategorySectionProps> = ({
   setCategoryValue,
   categoryValue,
+  debouncedValue,
   notes,
   setActive,
   active,
+  setValue,
+  textAreaRef,
 }) => {
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+    }
+
+    if (!active) return;
+
+    Socket.emit(Events.changedContent, {
+      category: active.category,
+      content: debouncedValue.trim().length <= 0 ? "" : debouncedValue,
+    });
+    // eslint-disable-next-line
+  }, [debouncedValue]);
+
+  useEffect(() => {
+    if (active === null) return;
+
+    textAreaRef.current?.focus();
+
+    setValue(active.content);
+  }, [active, setValue, textAreaRef]);
+
   function createNewCategory(e: React.FormEvent) {
     e.preventDefault();
 

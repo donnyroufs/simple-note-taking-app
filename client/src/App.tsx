@@ -25,7 +25,6 @@ const App = () => {
 
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  const mounted = useRef(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -53,52 +52,11 @@ const App = () => {
     // eslint-disable-next-line
   }, []);
 
-  useEffect(() => {
-    if (!mounted.current) {
-      mounted.current = true;
-    }
-
-    if (!active) return;
-
-    Socket.emit(Events.changedContent, {
-      category: active.category,
-      content: debouncedValue.trim().length <= 0 ? "" : debouncedValue,
-    });
-    // eslint-disable-next-line
-  }, [debouncedValue]);
-
-  useEffect(() => {
-    if (active == null) return;
-
-    textAreaRef.current?.focus();
-
-    setValue(active.content);
-  }, [active]);
-
   function destroyCategory() {
     if (!active) return;
     Socket.emit(Events.destroyCategory, { id: active.id });
     setNotes((curr) => curr.filter((n) => n.id !== active.id));
     onClose();
-  }
-
-  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    setValue(e.target.value);
-    if (status !== Status.typing) {
-      setStatus(Status.typing);
-    }
-    setNotes((curr) =>
-      curr.map((n) => {
-        if (active && n.id === active.id) {
-          return {
-            ...n,
-            content: e.target.value,
-          };
-        }
-
-        return n;
-      })
-    );
   }
 
   if (loading) {
@@ -107,24 +65,28 @@ const App = () => {
 
   return (
     <>
-      {/* refactor with a portal */}
       <DeleteModal isOpen={isOpen} onClose={onClose} onYes={destroyCategory} />
-
       <Header />
       <Container mt={12} display="flex" maxW="1200px">
         <CategorySection
           active={active}
           categoryValue={categoryValue}
+          debouncedValue={debouncedValue}
           notes={notes}
           setActive={setActive}
           setCategoryValue={setCategoryValue}
+          setValue={setValue}
+          textAreaRef={textAreaRef}
         />
         <ContentSection
-          handleChange={handleChange}
           onOpen={onOpen}
           status={status}
           textAreaRef={textAreaRef}
           value={value}
+          setNotes={setNotes}
+          active={active}
+          setStatus={setStatus}
+          setValue={setValue}
         />
       </Container>
     </>
