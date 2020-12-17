@@ -1,6 +1,6 @@
 import Server from '@ioc:Adonis/Core/Server'
 import noteService from 'App/Services/Note'
-import { ChangedContentDto, CreateCategoryDto, DestroyCategoryDto } from 'App/common/types'
+import { ChangedContentDto, CreateCategoryDto, DestroyCategoryDto, Events } from 'Common/index'
 
 import { Server as SocketIO, Socket } from 'socket.io'
 
@@ -17,27 +17,25 @@ class Ws {
   private async init(socket: Socket) {
     await this.emitNotes(socket)
 
-    socket.on('changed-content', async (payload: ChangedContentDto) => {
+    socket.on(Events.changedContent, async (payload: ChangedContentDto) => {
       await noteService.updateOrCreate(payload)
-      socket.emit('updated-content')
+      socket.emit(Events.updatedContent)
     })
 
-    socket.on('create-category', async (payload: CreateCategoryDto) => {
-      console.log(payload)
+    socket.on(Events.createCategory, async (payload: CreateCategoryDto) => {
       const createdCategory = await noteService.create(payload.category)
-      socket.emit('created-category', createdCategory)
+      socket.emit(Events.createdCategory, createdCategory)
     })
 
-    socket.on('destroy-category', async (payload: DestroyCategoryDto) => {
-      console.log('destroying')
+    socket.on(Events.destroyCategory, async (payload: DestroyCategoryDto) => {
       await noteService.destroy(payload.id)
-      socket.emit('destroyed-category')
+      socket.emit(Events.destroyedCategory)
     })
   }
 
   private async emitNotes(socket: Socket) {
     const notes = await noteService.all()
-    socket.emit('notes', notes)
+    socket.emit(Events.getNotes, notes)
   }
 }
 

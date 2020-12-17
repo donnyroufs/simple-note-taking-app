@@ -1,9 +1,9 @@
+import { useEffect, useRef, useState } from "react";
 import { AddIcon, DeleteIcon } from "@chakra-ui/icons";
-import React, { useEffect, useRef, useState } from "react";
-import { DeleteModal } from "./components/DeleteModal";
-import Socket, { waitForConnection } from "./utils/socket";
 import { useDebounce } from "use-debounce";
-import { Loader } from "./components/Loader";
+import Socket, { waitForConnection } from "./utils/socket";
+import { Events, Note, Status } from "./common/index";
+import { DeleteModal, Loader } from "./components";
 import {
   Box,
   Button,
@@ -20,21 +20,10 @@ import {
   Text,
 } from "@chakra-ui/react";
 
-interface Note {
-  id: number;
-  category: string;
-  content: string;
-}
-
-enum Status {
-  typing,
-  synced,
-}
-
 const App = () => {
-  const [active, setActive] = useState<Note | null>(null); // useLocalStorage
+  const [active, setActive] = useState<Note | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
-  const [value, setValue] = useState<string>(""); // add debounce
+  const [value, setValue] = useState<string>("");
 
   const [loading, setLoading] = useState<boolean>(true);
   const [status, setStatus] = useState<Status>(Status.synced);
@@ -47,7 +36,7 @@ const App = () => {
 
   useEffect(() => {
     waitForConnection().then((socket) => {
-      socket.on("notes", (notes: any) => {
+      socket.on(Events.getNotes, (notes: any) => {
         if (notes.length > 0) {
           setValue(notes[0].content);
         }
@@ -58,11 +47,11 @@ const App = () => {
         setLoading(false);
       });
 
-      socket.on("updated-content", () => {
+      socket.on(Events.updatedContent, () => {
         setStatus(Status.synced);
       });
 
-      socket.on("created-category", (data: any) => {
+      socket.on(Events.createdCategory, (data: any) => {
         setNotes((curr) => [data, ...curr]);
         setCategoryValue("");
       });
@@ -77,7 +66,7 @@ const App = () => {
 
     if (!active) return;
 
-    Socket.emit("changed-content", {
+    Socket.emit(Events.changedContent, {
       category: active.category,
       content: debouncedValue.trim().length <= 0 ? "" : debouncedValue,
     });
@@ -96,13 +85,12 @@ const App = () => {
     e.preventDefault();
 
     if (categoryValue.length <= 0) return;
-    console.log("emitting new category: ", categoryValue);
-    Socket.emit("create-category", { category: categoryValue });
+    Socket.emit(Events.createCategory, { category: categoryValue });
   }
 
   function destroyCategory() {
     if (!active) return;
-    Socket.emit("destroy-category", { id: active.id });
+    Socket.emit(Events.destroyCategory, { id: active.id });
     setNotes((curr) => curr.filter((n) => n.id !== active.id));
     onClose();
   }

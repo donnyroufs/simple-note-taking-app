@@ -1,5 +1,5 @@
 import Note from 'App/Models/Note'
-import { ChangedContentDto } from 'App/common/types'
+import { ChangedContentDto } from 'Common/index'
 
 class NoteService {
   public async all() {

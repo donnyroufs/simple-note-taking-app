@@ -1,5 +1,11 @@
 export enum Events {
+  getNotes = 'getNotes',
   changedContent = 'changedContent',
+  updatedContent = 'updatedContent',
+  createCategory = 'createCategory',
+  createdCategory = 'createdCategory',
+  destroyCategory = 'destroyCategory',
+  destroyedCategory = 'destroyedCategory',
 }
 
 export interface ChangedContentDto {
