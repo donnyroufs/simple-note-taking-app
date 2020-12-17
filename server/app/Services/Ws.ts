@@ -23,6 +23,7 @@ class Ws {
     })
 
     socket.on('create-category', async (payload: CreateCategoryDto) => {
+      console.log(payload)
       const createdCategory = await noteService.create(payload.category)
       socket.emit('created-category', createdCategory)
     })

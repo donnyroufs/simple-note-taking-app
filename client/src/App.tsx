@@ -1,5 +1,5 @@
 import { AddIcon, DeleteIcon } from "@chakra-ui/icons";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { DeleteModal } from "./components/DeleteModal";
 import Socket, { waitForConnection } from "./utils/socket";
 import { useDebounce } from "use-debounce";
@@ -41,6 +41,7 @@ const App = () => {
 
   const [categoryValue, setCategoryValue] = useState<string>("");
   const mounted = useRef(false);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [debouncedValue] = useDebounce(value, 600);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -63,9 +64,11 @@ const App = () => {
 
       socket.on("created-category", (data: any) => {
         setNotes((curr) => [data, ...curr]);
+        setCategoryValue("");
       });
     });
-  }, [value]);
+    // eslint-disable-next-line
+  }, []);
 
   useEffect(() => {
     if (!mounted.current) {
@@ -84,17 +87,17 @@ const App = () => {
   useEffect(() => {
     if (active == null) return;
 
+    textAreaRef.current?.focus();
+
     setValue(active.content);
   }, [active]);
-
-  
 
   function createNewCategory(e: React.FormEvent) {
     e.preventDefault();
 
     if (categoryValue.length <= 0) return;
+    console.log("emitting new category: ", categoryValue);
     Socket.emit("create-category", { category: categoryValue });
-    setCategoryValue("");
   }
 
   function destroyCategory() {
@@ -103,8 +106,6 @@ const App = () => {
     setNotes((curr) => curr.filter((n) => n.id !== active.id));
     onClose();
   }
-
-  // const categories = useMemo(() => notes.map((note) => note.category), [notes]);
 
   if (loading) {
     return <Loader />;
@@ -166,6 +167,7 @@ const App = () => {
             </Button>
           </Flex>
           <Textarea
+            ref={textAreaRef}
             value={value}
             onChange={(e) => {
               setValue(e.target.value);

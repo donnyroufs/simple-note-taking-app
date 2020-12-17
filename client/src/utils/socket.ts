@@ -10,7 +10,7 @@ function waitForConnection(): Promise<SocketIOClient.Socket> {
       res(socketIo);
       return;
     }
-    socketIo.on("connect", () => res(socketIo));
+    socketIo.once("connect", () => res(socketIo));
   });
 }
 
