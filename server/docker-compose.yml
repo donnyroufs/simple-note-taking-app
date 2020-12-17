@@ -8,11 +8,16 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=nttaker
+      - PGDATA=/var/lib/postgresql/data/pgdata
     ports:
       - 5432:5432
+    volumes:
+      - pgdata11:/var/lib/postgresql/data
 
   adminer:
     image: adminer
     restart: 'no'
     ports:
       - 5051:8080
+volumes:
+  pgdata11:
