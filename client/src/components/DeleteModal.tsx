@@ -12,11 +12,13 @@ import React from "react";
 
 export interface IDeleteModalProps {
   isOpen: boolean;
+  onYes: () => void;
   onClose: () => void;
 }
 
 export const DeleteModal: React.FC<IDeleteModalProps> = ({
   isOpen,
+  onYes,
   onClose,
 }) => {
   return (
@@ -29,10 +31,12 @@ export const DeleteModal: React.FC<IDeleteModalProps> = ({
           <ModalBody>Delete category and it's content?</ModalBody>
 
           <ModalFooter>
-            <Button colorScheme="pink" mr={3} onClick={onClose}>
+            <Button colorScheme="pink" mr={3} onClick={onYes}>
               Yes
             </Button>
-            <Button variant="ghost">Cancel</Button>
+            <Button variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
