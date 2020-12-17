@@ -1,5 +1,6 @@
-import { List, ListItem } from "@chakra-ui/react";
+import { List } from "@chakra-ui/react";
 import { Note } from "../../../../common";
+import Category from "../category/Category";
 
 interface ICategoriesProps {
   notes: Note[];
@@ -15,17 +16,11 @@ export const Categories: React.FC<ICategoriesProps> = ({
   return (
     <List spacing={3} mb={6}>
       {notes.map((note) => (
-        <ListItem
-          onClick={() => handleSetActive(note)}
-          bgColor={active && note.id === active.id ? "gray.200" : "gray.100"}
-          p={4}
-          borderRadius={9}
-          _hover={{ bgColor: "gray.200" }}
-          cursor="pointer"
-          key={note.id}
-        >
-          {note.category}
-        </ListItem>
+        <Category
+          note={note}
+          handleSetActive={handleSetActive}
+          active={active}
+        />
       ))}
     </List>
   );
